@@ -40,7 +40,7 @@ library(Demo)
 help(package = "project3", help_type = "html")
 # Use this to view the vignette as an isolated HTML file
 utils::browseVignettes(package = "project3")
-data(package = "project3", my_gapmainder)
+data(package = "project3", my_gapminder)
 ```
 ## 2. Tutorial for `my_t.test`
 
@@ -54,8 +54,8 @@ Use the `lifeExp` data from `my_gapminder` for the following tests
   
 ```{r}
 # perform t-test with the alternative = two.sided
-lifeExperienceV <- my_gapmainder$lifeExp
-#my_t.test(my_gapmainder$lifeExp, alternative = "two.sided", mu = 60)
+lifeExperienceV <- my_gapminder$lifeExp
+my_t.test(my_gapminder$lifeExp, alternative = "two.sided", mu = 60)
 ```
 In this case, p-value is 0.093, which is greater than 0.05. Thus the result is not statistically significant.
 We don't have enough evidence to reject the null hypothesis.
@@ -68,7 +68,7 @@ We don't have enough evidence to reject the null hypothesis.
   
 ```{r}
 # perform t-test with the alternative = less
-my_t.test(my_gapmainder$lifeExp, alternative = "less", mu = 60)
+my_t.test(my_gapminder$lifeExp, alternative = "less", mu = 60)
 ```
 In this case, p-value is 0.047, which is less than 0.05. Thus the result is statistically significant.
 We do have enough evidence to reject the null hypothesis. 
@@ -80,7 +80,7 @@ We do have enough evidence to reject the null hypothesis.
   \end{align}
 ```{r}
 # perform t-test with the alternative = greater
-my_t.test(my_gapmainder$lifeExp, alternative = "greater", mu = 60)
+my_t.test(my_gapminder$lifeExp, alternative = "greater", mu = 60)
 ```
 In this case, p-value is 0.047, which is smaller than 0.05. Thus the result is statistically significant.
 We do have enough evidence to reject the null hypothesis.
@@ -90,16 +90,16 @@ We do have enough evidence to reject the null hypothesis.
 ```{r, warning=FALSE}
 # a regression model using $lifeExp as the response variable and 
 # $gdpPercap and $continent as explanatory variables
-lm_table <- my_lm(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
+lm_table <- my_lm(lifeExp ~ gdpPercap + continent, data = my_gapminder)
 # print the result of the my_lm function
 lm_table
 # store the coefficients 
 lm_coefficients <- lm_table[, 1]
-my_matrix <- model.matrix(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
+my_matrix <- model.matrix(lifeExp ~ gdpPercap + continent, data = my_gapminder)
 # store actual values and fitted values to a data frame
-df <- data.frame("actual" = my_gapmainder$lifeExp, 
+df <- data.frame("actual" = my_gapminder$lifeExp, 
                  "fitted" = my_matrix %*% as.matrix(lm_coefficients), 
-                 "continent" = my_gapmainder$continent)
+                 "continent" = my_gapminder$continent)
 # plot the Actual vs. Fitted values graph
 ggplot(df, aes(x = actual, y = fitted, color = continent)) +
    geom_point() +
@@ -191,7 +191,6 @@ From the boxplot, when k = 2 MSE is smallest MSE= 33850, suggesting k = 2 might
 be the best model for random forest. From the table k=2 also has the smallest 
 mean. k = 10 has the largest MSE and mean. However, k=2 has a pretty large 
 standard deviation, suggesting the variability of prediction errors when k=2.
-Overall, considering the smallest MSE, I would choose k=2 as the model. 
 
 
  
