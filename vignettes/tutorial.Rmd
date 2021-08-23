@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-library(project3)
 library(class)
 library(palmerpenguins)
 library(randomForest)
@@ -24,23 +23,22 @@ library(magrittr)
 library(dplyr)
 library(tibble)
 library(ggplot2)
-
 ```
 
 ## 1. Introduction
 
-This is the final project for STAT302. A package called "project3" is created, and it includes four functions: `my_t_test`, `my_lm`, `my_knn_cv`, and `my_rf_cv``.
+This is the final project for STAT302. A package called "project3" is created, and it includes
+four functions: `my_t_test`, `my_lm`, `my_knn_cv`, and `my_rf_cv``.
 package collaborators: Sabrina Yu & Yining Li
 The guide to install the package:
 
 ```{r}
-devtools::install_github("SabrinaYuY/project3", build_vignette = TRUE, build_opts = c())
-library(Demo)
-# Use this to view the vignette in the Demo HTML help
-help(package = "project3", help_type = "html")
-# Use this to view the vignette as an isolated HTML file
-utils::browseVignettes(package = "project3")
-data(package = "project3", my_gapminder)
+load("my_gapmainder.rda")
+load("my_penguins.rda")
+source("my_t_test.R")
+source("my_rf_cv.R")
+source("my_lm.R")
+source("my_knn_cv.R")
 ```
 ## 2. Tutorial for `my_t.test`
 
@@ -54,8 +52,8 @@ Use the `lifeExp` data from `my_gapminder` for the following tests
   
 ```{r}
 # perform t-test with the alternative = two.sided
-lifeExperienceV <- my_gapminder$lifeExp
-my_t.test(my_gapminder$lifeExp, alternative = "two.sided", mu = 60)
+lifeExperienceV <- my_gapmainder$lifeExp
+#my_t.test(my_gapmainder$lifeExp, alternative = "two.sided", mu = 60)
 ```
 In this case, p-value is 0.093, which is greater than 0.05. Thus the result is not statistically significant.
 We don't have enough evidence to reject the null hypothesis.
@@ -67,8 +65,9 @@ We don't have enough evidence to reject the null hypothesis.
   \end{align}
   
 ```{r}
+
 # perform t-test with the alternative = less
-my_t.test(my_gapminder$lifeExp, alternative = "less", mu = 60)
+my_t.test(my_gapmainder$lifeExp, alternative = "less", mu = 60)
 ```
 In this case, p-value is 0.047, which is less than 0.05. Thus the result is statistically significant.
 We do have enough evidence to reject the null hypothesis. 
@@ -79,8 +78,9 @@ We do have enough evidence to reject the null hypothesis.
   H_a: \mu &> 60.
   \end{align}
 ```{r}
+
 # perform t-test with the alternative = greater
-my_t.test(my_gapminder$lifeExp, alternative = "greater", mu = 60)
+my_t.test(my_gapmainder$lifeExp, alternative = "greater", mu = 60)
 ```
 In this case, p-value is 0.047, which is smaller than 0.05. Thus the result is statistically significant.
 We do have enough evidence to reject the null hypothesis.
@@ -90,16 +90,16 @@ We do have enough evidence to reject the null hypothesis.
 ```{r, warning=FALSE}
 # a regression model using $lifeExp as the response variable and 
 # $gdpPercap and $continent as explanatory variables
-lm_table <- my_lm(lifeExp ~ gdpPercap + continent, data = my_gapminder)
+lm_table <- my_lm(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
 # print the result of the my_lm function
 lm_table
 # store the coefficients 
 lm_coefficients <- lm_table[, 1]
-my_matrix <- model.matrix(lifeExp ~ gdpPercap + continent, data = my_gapminder)
+my_matrix <- model.matrix(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
 # store actual values and fitted values to a data frame
-df <- data.frame("actual" = my_gapminder$lifeExp, 
+df <- data.frame("actual" = my_gapmainder$lifeExp, 
                  "fitted" = my_matrix %*% as.matrix(lm_coefficients), 
-                 "continent" = my_gapminder$continent)
+                 "continent" = my_gapmainder$continent)
 # plot the Actual vs. Fitted values graph
 ggplot(df, aes(x = actual, y = fitted, color = continent)) +
    geom_point() +
@@ -131,7 +131,7 @@ gdpPercap has significant influence on lifeExp.
 
 ## 4. Tutorial for `my_knn_cv` using `my_penguins`
 
-```{r}
+```{r my_knn_cv}
 # Predict output class species using covariates bill_length_mm, bill_depth_mm, 
 # flipper_length_mm, and body_mass_g.
 # omit all the NA in my_penguins
@@ -139,13 +139,16 @@ my_penguins <- na.omit(my_penguins)
 data_peng <- my_penguins[, c("bill_length_mm", "bill_depth_mm", 
                        "flipper_length_mm", "body_mass_g")]
 test <- my_penguins[, c("species")]
+test$species=as.numeric(test$species)
+my_penguins$species=as.numeric(my_penguins$species)
 train_err <- rep(NA, 10)
 cv_err <- rep(NA, 10)
 # store training errors and CV errors
 for (i in 1:10) {
   test <- my_knn_cv(data_peng, test, k_nn = 1, k_cv = 5)
-  train_err[i] <- sum(my_penguins$species != test[[1]]) / nrow(my_penguins)
+  train_err[i] <- sum(my_penguins$species != test[[1]]$pred_class) / nrow(my_penguins)
   cv_err[i] <- test[[2]]
+  test<-test[[1]]$pred_class
 }
 # record the training error and CV error
 knn_matrix <- cbind(c(1:10), train_err, cv_err)
@@ -187,10 +190,7 @@ rf_table <- data.frame("k" = c(2, 5, 10),
 rf_table
                        
 ```
-From the boxplot, when k = 2 MSE is smallest MSE= 33850, suggesting k = 2 might 
-be the best model for random forest. From the table k=2 also has the smallest 
-mean. k = 10 has the largest MSE and mean. However, k=2 has a pretty large 
-standard deviation, suggesting the variability of prediction errors when k=2.
-
-
- 
+From the boxplot, it's observed that CV estimated MSE has greatest mean when k = 2,
+which is above 120000. However, by inspecting the table, we can see standard deviation
+of CV estimated MSE is greatest when k = 10. The reason may be due to that 2 folds 
+yield  greatest MSE and 5 folds yield greatest variance in this data set.
