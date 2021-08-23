@@ -15,12 +15,3 @@ You can install the released version of project3 from Github
 devtools::install_github("SabrinaYuY/project3")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-library(project3)
-## basic example code
-```
-
