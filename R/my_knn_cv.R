@@ -16,34 +16,35 @@
 #' my_knn_cv(data_peng, test, k_nn = 1, k_cv = 5)
 #'
 #' @export
-my_knn_cv <- function(train, cl, k_nn, k_cv){
-  # Split data in k_cv parts, randomly
-  fold <- sample(rep(1:k_cv, length = nrow(train)))
-  misclassification <- c()
-
-  # Iterate through the folds
-  for (i in 1:k_cv) {
-    predictions <- NULL
-
-    # split train data by folds
-    train_trainfold <- as.data.frame(train[fold != i, ])
-    train_valfold <- as.data.frame(train[fold == i, ])
-
-    # split testing data by folds
-    test_trainfold <- as.data.frame(cl[fold != i, ])[,1]
-    test_valfold <- as.data.frame(cl[fold == i, ])[,1]
-
-    # predict the classes for this fold
-    predictions <- knn(train = train_trainfold, test = train_valfold,
-                       cl = test_trainfold, k = k_nn)
-
-    # store the errors for each fold
-    misclassification[i] <- sum(predictions != test_valfold) /
-      length(test_valfold)
+my_knn_cv=function (train, cl, k_nn, k_cv) 
+{
+  if (is.data.frame(train) == FALSE) {
+    stop("Input train is not a dataframe")
   }
-  # calculate the mean cv error
-  avg_cverr <- mean(misclassification)
-  # put the class and the cv_err together
-  cvvlist <- list(predictions, "cv_err" = avg_cverr)
-  return(cvvlist)
+  if (!is.numeric(c(k_nn, k_cv))) {
+    stop("k_nn and k_cv are non-numeric")
+  }
+  fold <- sample(rep(1:k_cv, length = nrow(train)))
+  data <- cbind(train, cl, fold)
+  pred_class <- vector()
+  cv_rate <- numeric()
+  train_err <- numeric()
+  for (i in 1:k_cv) {
+    data_train <- data %>% filter(fold != i)
+    data_test <- data %>% filter(fold == i)
+    cl_train <- data_train[, 5]
+    cl_test <- data_test[, 5]
+    prediction_train <- knn(data_train[, 1:4], data_train[, 
+                                                          1:4], cl_train, k_nn)
+    prediction_test <- knn(data_train[, 1:4], data_test[, 
+                                                        1:4], cl_train, k_nn)
+    pred_class[fold == i] <- prediction_test
+    cv_rate[i] <- mean(prediction_test != unlist(cl_test))
+    train_err[i] <- mean(prediction_train != unlist(cl_train))
+  }
+  class <- cbind(data[, 1:4], as.data.frame(pred_class))
+  cv_rate <- sum(cv_rate)/k_cv
+  cv_err <- mean((pred_class - data$species)^2)
+  train_err <- sum(train_err)/k_cv
+  return(list(as.vector(class), cv_err, train_err))
 }
