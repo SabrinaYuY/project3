@@ -1,0 +1,197 @@
+---
+title: "Project 3: project3package Tutorial"
+author: Sabrina Yu & Yining Li
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Project 3: PACKAGE_NAME Tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(project3)
+library(class)
+library(palmerpenguins)
+library(randomForest)
+library(magrittr)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+
+```
+
+## 1. Introduction
+
+This is the final project for STAT302. A package called "project3" is created, and it includes four functions: `my_t_test`, `my_lm`, `my_knn_cv`, and `my_rf_cv``.
+package collaborators: Sabrina Yu & Yining Li
+The guide to install the package:
+
+```{r}
+devtools::install_github("SabrinaYuY/project3", build_vignette = TRUE, build_opts = c())
+library(Demo)
+# Use this to view the vignette in the Demo HTML help
+help(package = "project3", help_type = "html")
+# Use this to view the vignette as an isolated HTML file
+utils::browseVignettes(package = "project3")
+data(package = "project3", my_gapmainder)
+```
+## 2. Tutorial for `my_t.test`
+
+Use the `lifeExp` data from `my_gapminder` for the following tests
+
+### Case I: alternative = "two.sided"
+ \begin{align}
+  H_0: \mu &= 60,\\
+  H_a: \mu &\neq 60.
+  \end{align}
+  
+```{r}
+# perform t-test with the alternative = two.sided
+lifeExperienceV <- my_gapmainder$lifeExp
+#my_t.test(my_gapmainder$lifeExp, alternative = "two.sided", mu = 60)
+```
+In this case, p-value is 0.093, which is greater than 0.05. Thus the result is not statistically significant.
+We don't have enough evidence to reject the null hypothesis.
+
+### Case II: alternative = "less"
+  \begin{align}
+  H_0: \mu &= 60,\\
+  H_a: \mu &< 60.
+  \end{align}
+  
+```{r}
+# perform t-test with the alternative = less
+my_t.test(my_gapmainder$lifeExp, alternative = "less", mu = 60)
+```
+In this case, p-value is 0.047, which is less than 0.05. Thus the result is statistically significant.
+We do have enough evidence to reject the null hypothesis. 
+
+### case III: alternative = "greater"
+  \begin{align}
+  H_0: \mu &= 60,\\
+  H_a: \mu &> 60.
+  \end{align}
+```{r}
+# perform t-test with the alternative = greater
+my_t.test(my_gapmainder$lifeExp, alternative = "greater", mu = 60)
+```
+In this case, p-value is 0.047, which is smaller than 0.05. Thus the result is statistically significant.
+We do have enough evidence to reject the null hypothesis.
+
+## 3. Tutorial for `my_lm`
+
+```{r, warning=FALSE}
+# a regression model using $lifeExp as the response variable and 
+# $gdpPercap and $continent as explanatory variables
+lm_table <- my_lm(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
+# print the result of the my_lm function
+lm_table
+# store the coefficients 
+lm_coefficients <- lm_table[, 1]
+my_matrix <- model.matrix(lifeExp ~ gdpPercap + continent, data = my_gapmainder)
+# store actual values and fitted values to a data frame
+df <- data.frame("actual" = my_gapmainder$lifeExp, 
+                 "fitted" = my_matrix %*% as.matrix(lm_coefficients), 
+                 "continent" = my_gapmainder$continent)
+# plot the Actual vs. Fitted values graph
+ggplot(df, aes(x = actual, y = fitted, color = continent)) +
+   geom_point() +
+   labs(x = "Fitted values", y = "Actual values", title = "Actual vs. Fitted") + 
+   theme(plot.title = element_text(hjust = 0.5)) +
+  geom_smooth(method = "lm", se = FALSE, aes(group = 1))
+```
+
+As each continent has larger coefficient than gdpPercap coefficient: 4.452704e-04.
+
+The gdpPercap coefficient means that the mean change in the lifeexperience 
+given a one unit change in the gdpPercap,  the mean lifeexperience value 
+increases by 4.452704e-04 for every one unit change in the gdpPercap while other
+stays the same. That is 
+
+We will do a two-sided hypothesis test to determine relationship between
+gdpPercap and lifeExp. The null hypothesis is that gdpPercap has no significant 
+influence on lifeExp.
+
+  \begin{align}
+  H_0: \beta &= 0,\\
+  H_a: \beta &\neq 0.
+  \end{align}
+
+The p-value for the hypothesis test is 8.553e-73, which is much smaller than 
+0.05. Thus the result is statistically significant and we have 
+sufficient evidence to reject the null hypothesis. 
+gdpPercap has significant influence on lifeExp.
+
+## 4. Tutorial for `my_knn_cv` using `my_penguins`
+
+```{r}
+# Predict output class species using covariates bill_length_mm, bill_depth_mm, 
+# flipper_length_mm, and body_mass_g.
+# omit all the NA in my_penguins
+my_penguins <- na.omit(my_penguins)
+data_peng <- my_penguins[, c("bill_length_mm", "bill_depth_mm", 
+                       "flipper_length_mm", "body_mass_g")]
+test <- my_penguins[, c("species")]
+train_err <- rep(NA, 10)
+cv_err <- rep(NA, 10)
+# store training errors and CV errors
+for (i in 1:10) {
+  test <- my_knn_cv(data_peng, test, k_nn = 1, k_cv = 5)
+  train_err[i] <- sum(my_penguins$species != test[[1]]) / nrow(my_penguins)
+  cv_err[i] <- test[[2]]
+}
+# record the training error and CV error
+knn_matrix <- cbind(c(1:10), train_err, cv_err)
+colnames(knn_matrix) <- c("k_nn", "Training error", "CV Error")
+as.table(knn_matrix)
+```
+
+Based on the table, I will use "k_nn = 1" model because "k_nn = 1" model has the 
+smallest error rate in both training misclassification rate and error 
+misclassification rate. 
+Cross-validation is a model validation technique that  to use a limited sample 
+in order to estimate how the model is expected to perform in general 
+when used to make predictions on data (speices). In practice, we want to choose 
+model that generates least error. 
+
+
+## 5. Tutorial for `my_rf_cv`
+
+```{r my_rf_cv}
+# Predict `body_mass_g` using covariates `bill_length_mm`, `bill_depth_mm`, and 
+# `flipper_length_mm` with `my_knn_cv` function and iterate through k 
+# in c(2, 5, 10)  for 30 iterations each.
+# Save the iteration results
+rf_2 <- replicate(30, my_rf_cv(2))
+rf_5 <- replicate(30, my_rf_cv(5))
+rf_10 <- replicate(30, my_rf_cv(10))
+# record the store the CV estimated MSE
+rf_df <- data.frame("k" = c(rep(2,30),rep(5,30), rep(10,30)),
+                 "cv" = c(rf_2,rf_5,rf_10))
+# Plot the results as a boxplot
+rf_plot <- ggplot(rf_df, aes(factor(k), cv)) +
+  geom_boxplot() +
+  labs(x = c("k"), y = c("MSE"))
+rf_plot
+# Display the statistics of the results as a table
+rf_table <- data.frame("k" = c(2, 5, 10),
+                       "Mean" = c(mean(rf_2),mean(rf_5),mean(rf_10)),
+                       "Standard Deviation" = c(sd(rf_2),sd(rf_5),sd(rf_10)))
+rf_table
+                       
+```
+From the boxplot, when k = 2 MSE is smallest MSE= 33850, suggesting k = 2 might 
+be the best model for random forest. From the table k=2 also has the smallest 
+mean. k = 10 has the largest MSE and mean. However, k=2 has a pretty large 
+standard deviation, suggesting the variability of prediction errors when k=2.
+Overall, considering the smallest MSE, I would choose k=2 as the model. 
+
+
+ 
