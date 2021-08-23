@@ -194,3 +194,4 @@ From the boxplot, it's observed that CV estimated MSE has greatest mean when k =
 which is above 120000. However, by inspecting the table, we can see standard deviation
 of CV estimated MSE is greatest when k = 10. The reason may be due to that 2 folds 
 yield  greatest MSE and 5 folds yield greatest variance in this data set.
+I would choose k = 2 as the model as it has smallest MSE even with highest sd
