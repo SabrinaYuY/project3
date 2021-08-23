@@ -14,4 +14,13 @@ You can install the released version of project3 from Github
 ``` r
 devtools::install_github("SabrinaYuY/project3")
 ```
+## Use
+
+``` r
+library(project3)
+# Use this to view the vignette in the Demo HTML help
+help(package = "project3", help_type = "html")
+# Use this to view the vignette as an isolated HTML file
+utils::browseVignettes(package = "project3")
+```
 
